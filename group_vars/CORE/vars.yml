@@ -1,0 +1,6 @@
+---
+ansible_user: "scriptman"
+ansible_password: "{{ vault_scriptman_password }}"
+ansible_connection: "network_cli"
+ansible_network_os: iosxr
+
