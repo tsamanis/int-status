@@ -1,0 +1,66 @@
+---
+
+- name: Checking Router interface state
+  gather_facts: no
+  hosts: CORE:PEERING
+  connection: network_cli
+  roles:
+    - clay584.parse_genie
+    - ansible-pyats  
+  vars:
+    slack_token: T2YBAMCR5/B02R2T507A8/3NQ3e2kQ7AdqrCil3Pp6KeVJ
+    cmdxe: "show interfaces description | include Gi|Te"
+    cmdxr: "show interfaces description | utility egrep -i '^(BE|Gi|Te|Hu|FH)'"
+
+  tasks:
+
+  - name: Creating Baseline
+    include_role:
+      name:  baseline
+    tags: base
+      
+  - name: Load baseline
+    include_vars:
+      file: "/netconf/ansible/ipnet/production/int-status/baseline/{{inventory_hostname}}.baseline"
+      name: baseline    
+    tags: always
+
+  - name: Display Baseline   
+    debug: 
+      var=baseline  
+    tags: always
+
+  - name: Check Interface Status
+    include_role:
+      name:  current
+    tags: always
+
+  - name: Diff Current Status with baseline
+    set_fact:
+      diff_output: "{{ current_status | genie_parser_diff(baseline) | to_nice_yaml(indent=2)}}"    
+    tags: always
+
+  - name: Display DIFF
+    debug:
+     var: diff_output
+    tags: always
+
+  - name: Sent Slack Notification with DIFF (if any)
+    slack:
+     token: "{{ slack_token }}"
+     msg: "{{inventory_hostname}} : {{diff_output}}"
+#    blocks:
+#      - type: section
+#        text:
+#          type: mrkdwn      
+#          text: |-
+#                  *{{inventory_hostname}}*
+#      - type: divider
+#      - type: context
+#        elements:
+#        - type: mrkdwn
+#          text: |-
+#                  ~{{diff_output}}~         
+    delegate_to:  localhost               
+    when: diff_output | length > 5
+    tags: always

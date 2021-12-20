@@ -1,0 +1,32 @@
+---
+
+  - name: Check Interface status - IOSXE
+    ios_command:
+      commands:
+        - "{{cmdxe}}"
+    register: status
+    when: ansible_network_os=='ios'
+    tags: base
+
+  - name: Set fact with Genie filter plugin - PARSE - IOSXE
+    set_fact:
+      current_status: "{{ status['stdout'][0] | parse_genie(command='show interfaces description', os='ios') }}"
+    when: ansible_network_os=='ios'
+    tags: base
+
+  - name: Check Interface status - IOSXR
+    iosxr_command:
+      commands:
+        - "{{cmdxr}}"
+    register: status
+    when: ansible_network_os=='iosxr'
+    tags: base
+
+  - name: Set fact with Genie filter plugin - PARSE - IOSXR
+    set_fact:
+      current_status: "{{ status['stdout'][0] | parse_genie(command='show interfaces description', os='iosxr') }}"
+    when: ansible_network_os=='iosxr'
+    tags: base
+
+  - copy: content="{{current_status}}" dest="/netconf/ansible/ipnet/production/int-status/baseline/{{inventory_hostname}}.baseline"
+    tags: base
