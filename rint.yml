@@ -35,10 +35,10 @@
       name:  current
     tags: always
 
-  - name: Diff Current Status with baseline
-    set_fact:
-      diff_output: "{{ current_status | genie_parser_diff(baseline) | to_nice_yaml(indent=2)}}"    
-    tags: always
+ - name: Diff Current Status with baseline
+   set_fact:
+     diff_output: "{{ baseline | genie_parser_diff(current_status) | to_nice_yaml(indent=2)}}"    
+   tags: always
 
   - name: Display DIFF
     debug:
